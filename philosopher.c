@@ -6,7 +6,7 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:16 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/10 20:40:45 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/10 21:37:22 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,21 +19,21 @@
 static bool	philo_query(t_timer *timer, struct timeval *start)
 {
 	pthread_mutex_lock(timer->mutex);
+	usleep(10);
 	if (timer->id != 1 && timer->id != timer->size)
 	{
-		usleep(40);
 		if (timer->fork[timer->id - 1] && timer->fork[timer->id])
 			return (mid_eat(timer, start));
 	}
 	else if (timer->id == 1)
 	{
-		usleep(40);
+	//	usleep(10);
 		if (timer->size != 1 && timer->fork[0] && timer->fork[1])
 			return (first_eat(timer, start));
 	}
 	else
 	{
-		usleep(40);
+//		usleep(10);
 		if (timer->fork[timer->id - 1] && timer->fork[0])
 			return (last_eat(timer, start));
 	}
