@@ -1,52 +1,45 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   philo.h                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/10/05 20:32:15 by lugonzal          #+#    #+#             */
+/*   Updated: 2021/10/10 20:11:08 by lugonzal         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef PHILO_H
 # define PHILO_H
 
-#include <pthread.h>
-#include <sys/time.h>
+# include <stdlib.h>
+# include <stdbool.h>
+# include <pthread.h>
 
-typedef struct s_fork 
+typedef struct s_timer
 {
-	struct s_fork	*prev;
-	struct s_fork	*next;
-	int				status;
-}	t_fork;
+	bool			*fork;
+	size_t			size;
+	size_t			die;
+	size_t			eat;
+	size_t			sleep;
+	size_t			max;
+	struct timeval	ref;
+	size_t			id;
+	pthread_mutex_t	*mutex;
+}	t_timer;
 
-typedef struct s_philo 
-{
-	struct s_philo	*prev_p;
-	struct s_philo	*next_p;
-	struct s_fork	*prev_f;
-	struct s_fork	*next_f;
-	int				time_die;
-	int				time_eat;
-	int				time_sleep;
-	int				time_think;
-	int				max_eat;
-	int				label;
-	pthread_t		id;
-	int				status;
-	pthread_mutex_t mutex;
-	struct timeval	start;
-	struct timeval	end;
-	struct timeval	*start_ref;
-}	t_philo;
+void	print(t_timer timer, int argc);
 
-typedef struct s_data
-{
-	t_philo		*head_p;
-	t_philo		*tail_p;
-	t_philo		*new_p;
-	t_fork		*head_f;
-	t_fork		*tail_f;
-	t_fork		*new_f;
-	int			signal;
-	pthread_t	*id;
-	int			total;
-	struct timeval	start;
-	int			exit_status;
-	pthread_mutex_t	mutex;
-}	t_data;
+size_t	num_process(char *str, size_t *signal);
+bool	set_values(int argc, char *argv[], t_timer *timer);
+bool	philo_dynamic(t_timer timer);
+bool	free_data(t_timer *timer);
+long	timestamp(struct timeval ref);
+void	dead_status(struct timeval start, t_timer timer, size_t id);
+bool	mid_eat(t_timer *timer, struct timeval *start);
+bool	first_eat(t_timer *timer, struct timeval *start);
+bool	last_eat(t_timer *timer, struct timeval *start);
 
-void	printf_list(t_data data, char *str);
-
-# endif
+#endif

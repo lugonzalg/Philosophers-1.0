@@ -5,8 +5,12 @@ CFLAGS = -Wall -Werror -Wextra -fsanitize=address -g3
 RM = rm -rf
 AR = ar rcs
 
-FILES = philo \
-		print
+FILES = main \
+		philosopher \
+		print \
+		memory_utils \
+		time \
+		philo_eat
 
 SRC = $(addsuffix .c, $(FILES))
 OBJ = $(addsuffix .o, $(FILES))
