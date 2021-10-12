@@ -1,16 +1,14 @@
 NAME = philo
 
 CC = Clang
-CFLAGS = -Wall -Werror -Wextra -fsanitize=address -g3
+CFLAGS = -Wall -Werror -Wextra
 RM = rm -rf
 AR = ar rcs
 
 FILES = main \
 		philosopher \
-		print \
 		memory_utils \
-		time \
-		philo_eat
+		time 
 
 SRC = $(addsuffix .c, $(FILES))
 OBJ = $(addsuffix .o, $(FILES))

@@ -6,36 +6,58 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:16 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/10 21:37:22 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/12 23:23:04 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <sys/time.h>
-#include <pthread.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include "philo.h"
 
-static bool	philo_query(t_timer *timer, struct timeval *start)
+bool	philo_eat(t_timer *timer, struct timeval *start, size_t	lf, size_t rf)
 {
-	pthread_mutex_lock(timer->mutex);
-	usleep(10);
-	if (timer->id != 1 && timer->id != timer->size)
+	timer->fork[lf] = false;
+	timer->fork[rf] = false;
+	printf("%ld %zu has taken the fork\n", timestamp(timer->ref), timer->id);
+	if (timer->max != -1)
+		timer->max--;
+	pthread_mutex_unlock(timer->mutex);
+	gettimeofday(start, NULL);
+	printf("%ld %zu is eating\n", timestamp(timer->ref), timer->id);
+	if (timer->eat < timer->die)
 	{
-		if (timer->fork[timer->id - 1] && timer->fork[timer->id])
-			return (mid_eat(timer, start));
-	}
-	else if (timer->id == 1)
-	{
-	//	usleep(10);
-		if (timer->size != 1 && timer->fork[0] && timer->fork[1])
-			return (first_eat(timer, start));
+		while ((long)timer->eat > timestamp(*start))
+			usleep(timer->eat);
 	}
 	else
 	{
-//		usleep(10);
+		while ((long)timer->die > timestamp(*start))
+			usleep(timer->die);
+	}
+	timer->fork[lf] = true;
+	timer->fork[rf] = true;
+	return (false);
+}
+
+static bool	philo_query(t_timer *timer, struct timeval *start)
+{
+	if (timer->id != 1 && timer->id != timer->size)
+	{
+		pthread_mutex_lock(timer->mutex);
+		if (timer->fork[timer->id - 1] && timer->fork[timer->id])
+			return (philo_eat(timer, start, timer->id, timer->id - 1));
+	}
+	else if (timer->id == 1)
+	{
+		pthread_mutex_lock(timer->mutex);
+		if (timer->size != 1 && timer->fork[0] && timer->fork[1])
+			return (philo_eat(timer, start, 1, 0));
+	}
+	else
+	{
+		pthread_mutex_lock(timer->mutex);
 		if (timer->fork[timer->id - 1] && timer->fork[0])
-			return (last_eat(timer, start));
+			return (philo_eat(timer, start, 0, timer->id - 1));
 	}
 	pthread_mutex_unlock(timer->mutex);
 	return (true);
@@ -45,17 +67,24 @@ static void	*start_process(void *timer)
 {
 	t_timer			timer_in;
 	struct timeval	start;
-	
+
 	timer_in = *(t_timer *)timer;
 	pthread_mutex_unlock(timer_in.mutex);
 	gettimeofday(&start, NULL);
-	while (1)
+	while (*timer_in.status)
 	{
-		while (philo_query(&timer_in, &start))
-			dead_status(start, timer_in, timer_in.id);
+		while (*timer_in.status && philo_query(&timer_in, &start))
+			dead_status(start, &timer_in);
+		dead_status(start, &timer_in);
+		if (!*timer_in.status || !timer_in.max)
+			return (NULL);
 		printf("%ld %zu is sleeping\n", timestamp(timer_in.ref), timer_in.id);
+		printf("ID: %zu MAX: %zd\n", timer_in.id, timer_in.max);
 		usleep(timer_in.sleep * 1000);
 		printf("%ld %zu is thinking\n", timestamp(timer_in.ref), timer_in.id);
+		dead_status(start, &timer_in);
+		if (!*timer_in.status || !timer_in.max)
+			return (NULL);
 	}
 	return (NULL);
 }
@@ -83,5 +112,7 @@ bool	philo_dynamic(t_timer timer)
 	i = -1;
 	while (++i < timer.size)
 		pthread_join(thread_id[i], NULL);
+	i = -1;
+	free(thread_id);
 	return (false);
 }

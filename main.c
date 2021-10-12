@@ -6,11 +6,13 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:05 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/10 20:40:44 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/12 23:23:08 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 size_t	num_process(char *str, size_t *signal)
 {
@@ -19,7 +21,7 @@ size_t	num_process(char *str, size_t *signal)
 	out = 0;
 	while (*str)
 	{
-		if (*str < '0' || *str > '9')
+		if (*str < 48 || *str > 57)
 		{
 			*signal = 1;
 			return (out);
@@ -40,5 +42,6 @@ int	main(int argc, char *argv[])
 		return (2);
 	if (philo_dynamic(timer))
 		return (3);
+	free_utils(&timer);
 	return (0);
 }
