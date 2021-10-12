@@ -6,7 +6,7 @@
 /*   By: lugonzal <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 19:46:35 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/12 23:23:05 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/12 23:27:43 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ bool	set_values(int argc, char *argv[], t_timer *timer)
 
 	signal = 0;
 	timer->status = (bool *)malloc(sizeof(bool));
-	*timer->status = 1;
+	*timer->status = true;
 	timer->size = num_process(argv[1], &signal);
 	timer->die = num_process(argv[2], &signal);
 	timer->eat = num_process(argv[3], &signal);

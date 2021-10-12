@@ -6,7 +6,7 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/09 23:44:04 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/12 23:23:07 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/12 23:28:14 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void	dead_status(struct timeval start, t_timer *timer)
 		pthread_mutex_lock(timer->mutex);
 		if (timer->max)
 			printf("%ld %zu died\n", timestamp(timer->ref), timer->id);
-		*timer->status = 0;
+		*timer->status = false;
 		memset(timer->fork, false, timer->size);
 		pthread_mutex_unlock(timer->mutex);
 	}
