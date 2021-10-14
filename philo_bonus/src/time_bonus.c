@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   time.c                                             :+:      :+:    :+:   */
+/*   time_bonus.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/10/09 23:44:04 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/12 23:28:14 by lugonzal         ###   ########.fr       */
+/*   Created: 2021/10/13 18:38:35 by lugonzal          #+#    #+#             */
+/*   Updated: 2021/10/14 12:06:28 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philo.h"
+#include "../inc/philo_bonus.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -26,6 +26,21 @@ long	timestamp(struct timeval ref)
 	return (sec + micro_s);
 }
 
+static bool	max_status(t_timer timer)
+{
+	size_t	i;
+
+	i = 0;
+	if (!timer.max[timer.id - 1])
+	{
+		while (i < timer.size && !timer.max[i])
+			i++;
+		if (i == timer.size)
+			return (true);
+	}
+	return (false);
+}
+
 void	dead_status(struct timeval start, t_timer *timer)
 {
 	struct timeval	end;
@@ -37,10 +52,11 @@ void	dead_status(struct timeval start, t_timer *timer)
 	sec = end.tv_sec - start.tv_sec;
 	micro_s = end.tv_usec - start.tv_usec;
 	total = (long)sec * 1000 + (long)micro_s / 1000;
-	if ((total >= (long)timer->die || timer->max == 0) && *timer->status)
+	printf("DAED STATUS\n");
+	if ((total >= (long)timer->die || max_status(*timer)) && *timer->status)
 	{
 		pthread_mutex_lock(timer->mutex);
-		if (timer->max)
+		if (timer->max[timer->id - 1])
 			printf("%ld %zu died\n", timestamp(timer->ref), timer->id);
 		*timer->status = false;
 		memset(timer->fork, false, timer->size);
