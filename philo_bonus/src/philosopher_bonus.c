@@ -6,21 +6,25 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/13 18:38:04 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/14 12:06:43 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/18 19:40:51 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/philo_bonus.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
 
 static bool	philo_eat(t_timer *t, struct timeval *start)
 {
+	sem_wait(t->sem);
+	sem_wait(t->sem);
 	printf("%ld %zu has taken the fork\n", timestamp(t->ref), t->id);
-	if (t->max[t->id - 1] != -1)
-		t->max[t->id - 1]--;
 	gettimeofday(start, NULL);
-	printf("%ld %zu is eating\n", timestamp(t->ref), t->id);
+	if (t->max_count--)
+		sem_post(t->max);
 	if (t->eat < t->die)
 	{
 		while ((long)t->eat > timestamp(*start))
@@ -31,44 +35,49 @@ static bool	philo_eat(t_timer *t, struct timeval *start)
 		while ((long)t->die > timestamp(*start))
 			usleep(t->die);
 	}
+	sem_post(t->sem);
+	sem_post(t->sem);
 	return (false);
 }
 
-static bool	philo_query(t_timer *timer, struct timeval *start)
+void	*start_process(t_timer *timer_in)
 {
-	size_t	i;
+	struct timeval	start;
+	pthread_t		id;
+	size_t			max_count;
 
-	i = -1;
-	printf("PRE_IN_SEM ID: %zu\n", timer->id);
-	while (++i < 2)
-		sem_wait(timer->sem);
-	printf("AF_IN_SEM ID: %zu\n", timer->id);
-	philo_eat(timer, start);
-	return (true);
+	max_count = timer_in->max_count;
+	gettimeofday(timer_in->start, NULL);
+	pthread_create(&id, NULL, dead_status, timer_in);
+	while (1)
+	{
+		if (*timer_in->status)
+			philo_eat(timer_in, timer_in->start);
+		printf("%ld %zu is sleeping\n", timestamp(timer_in->ref), timer_in->id);
+		gettimeofday(&start, NULL);
+		while ((long)timer_in->sleep > timestamp(start))
+			usleep(timer_in->sleep);
+		printf("%ld %zu is thinking\n", timestamp(timer_in->ref), timer_in->id);
+	}
+	return (NULL);
 }
 
-static void	*start_process(void *timer)
+static void	*max_status(void *timer)
 {
-	t_timer			timer_in;
-	struct timeval	start[2];
+	t_timer	t;
+	size_t	i;
 
-	timer_in = *(t_timer *)timer;
-	gettimeofday(&start[0], NULL);
-	while (*timer_in.status)
+	i = 0;
+	t = *(t_timer *)timer;
+	while (1)
 	{
-		printf("IN_LOOP ID: %zu\n", timer_in.id);
-		while (*timer_in.status && philo_query(&timer_in, &start[0]))
-			dead_status(start[0], &timer_in);
-		printf("2IN_LOOP ID: %zu\n", timer_in.id);
-		printf("%ld %zu is sleeping\n", timestamp(timer_in.ref), timer_in.id);
-		if (!*timer_in.status || !timer_in.max)
-			return (NULL);
-		gettimeofday(&start[1], NULL);
-		while ((long)timer_in.sleep > timestamp(start[1]))
-			usleep(timer_in.sleep);
-		usleep(250);
-		printf("%ld %zu is thinking\n", timestamp(timer_in.ref), timer_in.id);
-		usleep(250);
+		sem_wait(t.max);
+		i++;
+		if (i == t.max_count * t.size)
+		{
+			sem_post(t.kill);
+			break ;
+		}
 	}
 	return (NULL);
 }
@@ -76,25 +85,28 @@ static void	*start_process(void *timer)
 bool	philo_dynamic(t_timer timer)
 {
 	size_t			i;	
+	pid_t			*id;
+	pthread_t		pthr_id;
 
+	id = (pid_t *)malloc(sizeof(pid_t) * (timer.size));
 	if (gettimeofday(&timer.ref, NULL) == -1)
 		return (1);
 	i = -1;
+	pthread_create(&pthr_id, NULL, max_status, &timer);
 	while (++i < timer.size)
 	{
-		timer.pid[i] = fork();
+		id[i] = fork();
 		timer.id = i + 1;
-		if (timer.pid[i] == 0)
+		if (id[i] == 0)
 			start_process(&timer);
-		printf("CHILD CREATED\n");
 	}
-	printf("FAMILY CREEATED\n");
 	i = -1;
 	while (++i < timer.size)
 	{
-		printf("VALUE: %zu", i);
-		waitpid(timer.pid[i], NULL, 0);
+		sem_wait(timer.kill);
+		kill(id[i], SIGKILL);
+		sem_post(timer.kill);
 	}
-	i = -1;
+	free(id);
 	return (false);
 }

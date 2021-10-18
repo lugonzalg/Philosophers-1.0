@@ -6,13 +6,14 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/13 18:38:35 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/14 12:06:28 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/18 18:06:38 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/philo_bonus.h"
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 long	timestamp(struct timeval ref)
 {
@@ -26,40 +27,23 @@ long	timestamp(struct timeval ref)
 	return (sec + micro_s);
 }
 
-static bool	max_status(t_timer timer)
+void	*dead_status(void *timer)
 {
-	size_t	i;
+	t_timer			timer_th;
 
-	i = 0;
-	if (!timer.max[timer.id - 1])
+	timer_th = *(t_timer *)timer;
+	while (*timer_th.status)
 	{
-		while (i < timer.size && !timer.max[i])
-			i++;
-		if (i == timer.size)
-			return (true);
+		sem_wait(timer_th.statuss);
+		if (*timer_th.status
+			&& (long)timer_th.die <= timestamp(*timer_th.start))
+		{
+			printf("%ld %zu died\n", timestamp(timer_th.ref), timer_th.id);
+			sem_post(timer_th.kill);
+			*timer_th.status = false;
+			break ;
+		}
+		sem_post(timer_th.statuss);
 	}
-	return (false);
-}
-
-void	dead_status(struct timeval start, t_timer *timer)
-{
-	struct timeval	end;
-	time_t			sec;
-	suseconds_t		micro_s;
-	long			total;
-
-	gettimeofday(&end, NULL);
-	sec = end.tv_sec - start.tv_sec;
-	micro_s = end.tv_usec - start.tv_usec;
-	total = (long)sec * 1000 + (long)micro_s / 1000;
-	printf("DAED STATUS\n");
-	if ((total >= (long)timer->die || max_status(*timer)) && *timer->status)
-	{
-		pthread_mutex_lock(timer->mutex);
-		if (timer->max[timer->id - 1])
-			printf("%ld %zu died\n", timestamp(timer->ref), timer->id);
-		*timer->status = false;
-		memset(timer->fork, false, timer->size);
-		pthread_mutex_unlock(timer->mutex);
-	}
+	return (NULL);
 }

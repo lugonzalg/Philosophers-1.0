@@ -6,7 +6,7 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:16 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/14 11:51:02 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/18 17:21:33 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,17 +76,19 @@ static void	*start_process(void *timer)
 	{
 		while (*timer_in.status && philo_query(&timer_in, &start[0]))
 			dead_status(start[0], &timer_in);
+		dead_status(start[0], &timer_in);
+		if (!*timer_in.status)
+			break ;
 		printf("%ld %zu is sleeping\n", timestamp(timer_in.ref), timer_in.id);
 		pthread_mutex_unlock(timer_in.mutex);
-		usleep(450);
-		if (!*timer_in.status || !timer_in.max)
-			return (NULL);
 		gettimeofday(&start[1], NULL);
 		while ((long)timer_in.sleep > timestamp(start[1]))
 			usleep(timer_in.sleep);
 		printf("%ld %zu is thinking\n", timestamp(timer_in.ref), timer_in.id);
-		usleep(350);
+		usleep(1100);
+		dead_status(start[0], &timer_in);
 	}
+	pthread_mutex_unlock(timer_in.mutex);
 	return (NULL);
 }
 

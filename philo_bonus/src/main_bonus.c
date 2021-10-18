@@ -6,13 +6,11 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/13 18:38:14 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/14 12:06:13 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/10/18 19:41:21 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../inc/philo_bonus.h"
-#include <stdlib.h>
-#include <stdio.h>
 
 size_t	num_process(char *str, bool *signal)
 {
