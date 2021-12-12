@@ -15,6 +15,9 @@ SRC = $(addprefix $(SRC_DIR), $(addsuffix .c, $(FILES)))
 
 all: $(NAME)
 
+.c.o:
+	${CC} ${CFLAGS} ${SRC} -c $^ -o $@
+
 $(NAME): ${SRC}
 	@echo "\033[1;33m\t\tCompiling all source files into unique binary\033[0;m"
 	${CC} ${CFLAGS} ${SRC} ${INC} -lpthread -o ${NAME}

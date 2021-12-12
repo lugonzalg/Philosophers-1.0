@@ -6,117 +6,117 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:16 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/18 17:21:33 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/12/12 22:35:20 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../inc/philo.h"
+#include "philo.h"
 
-static bool	philo_eat(t_timer *t, struct timeval *start, size_t	lf, size_t rf)
+static void	ft_philo_eat(t_timer *t, struct timeval *start)
 {
-	t->fork[lf] = false;
-	t->fork[rf] = false;
-	printf("%ld %zu has taken the fork\n", timestamp(t->ref), t->id);
-	pthread_mutex_unlock(t->mutex);
 	if (t->max[t->id - 1] != -1)
 		t->max[t->id - 1]--;
+	pthread_mutex_lock(t->mutex);
+	printf("%ld %zu is eating\n", ft_timestamp(t->ref), t->id);
+	pthread_mutex_unlock(t->mutex);
 	gettimeofday(start, NULL);
-	printf("%ld %zu is eating\n", timestamp(t->ref), t->id);
 	if (t->eat < t->die)
 	{
-		while ((long)t->eat > timestamp(*start))
+		while ((long)t->eat > ft_timestamp(*start))
 			usleep(t->eat);
 	}
 	else
 	{
-		while ((long)t->die > timestamp(*start))
+		while ((long)t->die > ft_timestamp(*start))
 			usleep(t->die);
 	}
-	pthread_mutex_lock(t->mutex);
-	t->fork[lf] = true;
-	t->fork[rf] = true;
-	return (false);
 }
 
-static bool	philo_query(t_timer *timer, struct timeval *start)
+static bool	ft_philo_query(t_timer *t, struct timeval *start)
 {
-	if (timer->id != 1 && timer->id != timer->size)
+	if (ft_fork_request(t, t->id))
 	{
-		pthread_mutex_lock(timer->mutex);
-		if (timer->fork[timer->id - 1] && timer->fork[timer->id])
-			return (philo_eat(timer, start, timer->id, timer->id - 1));
+		while (*t->status && !ft_fork_request(t, t->id - 1))
+			ft_dead_status(*start, t);
+		ft_philo_eat(t, start);
+		ft_fork_giveback(t, t->id);
+		return (false);
 	}
-	else if (timer->id == 1)
-	{
-		pthread_mutex_lock(timer->mutex);
-		if (timer->size != 1 && timer->fork[0] && timer->fork[1])
-			return (philo_eat(timer, start, 1, 0));
-	}
-	else
-	{
-		pthread_mutex_lock(timer->mutex);
-		if (timer->fork[timer->id - 1] && timer->fork[0])
-			return (philo_eat(timer, start, 0, timer->id - 1));
-	}
-	pthread_mutex_unlock(timer->mutex);
 	return (true);
 }
 
-static void	*start_process(void *timer)
+static bool	ft_sleep(t_timer *t, struct timeval start[2])
 {
-	t_timer			timer_in;
+	ft_dead_status(start[0], t);
+	if (!*t->status)
+		return (true);
+	pthread_mutex_lock(t->mutex);
+	printf("%ld %zu is sleeping\n", ft_timestamp(t->ref), t->id);
+	pthread_mutex_unlock(t->mutex);
+	gettimeofday(&start[1], NULL);
+	while ((long)t->sleep > ft_timestamp(start[1]))
+		usleep(t->sleep);
+	if (!*t->status)
+		return (true);
+	pthread_mutex_lock(t->mutex);
+	printf("%ld %zu is thinking\n", ft_timestamp(t->ref), t->id);
+	pthread_mutex_unlock(t->mutex);
+	ft_dead_status(start[0], t);
+	return (false);
+}
+
+static void	*ft_start_process(void *t)
+{
+	t_timer			t_in;
 	struct timeval	start[2];
 
-	timer_in = *(t_timer *)timer;
-	pthread_mutex_unlock(timer_in.mutex);
+	t_in = *(t_timer *)t;
+	pthread_mutex_unlock(t_in.mutex);
 	gettimeofday(&start[0], NULL);
-	while (*timer_in.status)
+	while (1)
 	{
-		while (*timer_in.status && philo_query(&timer_in, &start[0]))
-			dead_status(start[0], &timer_in);
-		dead_status(start[0], &timer_in);
-		if (!*timer_in.status)
+		if ((0.1 * t_in.size) < ft_timestamp(t_in.ref))
 			break ;
-		printf("%ld %zu is sleeping\n", timestamp(timer_in.ref), timer_in.id);
-		pthread_mutex_unlock(timer_in.mutex);
-		gettimeofday(&start[1], NULL);
-		while ((long)timer_in.sleep > timestamp(start[1]))
-			usleep(timer_in.sleep);
-		printf("%ld %zu is thinking\n", timestamp(timer_in.ref), timer_in.id);
-		usleep(1100);
-		dead_status(start[0], &timer_in);
+		usleep(t_in.size * 2.5);
 	}
-	pthread_mutex_unlock(timer_in.mutex);
+	if ((t_in.id + 1) % 2)
+		usleep(t_in.size * 70);
+	while (*t_in.status)
+	{
+		while (*t_in.status && ft_philo_query(&t_in, &start[0]))
+			ft_dead_status(start[0], &t_in);
+		ft_sleep(&t_in, start);
+	}
+	pthread_mutex_unlock(t_in.mutex);
 	return (NULL);
 }
 
-bool	philo_dynamic(t_timer timer)
+extern bool	ft_philo_dynamic(t_timer t)
 {
 	size_t			i;	
 	pthread_t		*thread_id;
-	pthread_mutex_t	mutex;
 
-	thread_id = (pthread_t *)malloc(sizeof(pthread_t) * timer.size);
+	thread_id = (pthread_t *)malloc(sizeof(pthread_t) * t.size);
 	if (!thread_id)
 		return (1);
-	pthread_mutex_init(&mutex, NULL);
-	timer.mutex = &mutex;
-	if (gettimeofday(&timer.ref, NULL) == -1)
+	pthread_mutex_init(t.mutex, NULL);
+	if (gettimeofday(&t.ref, NULL) == -1)
 		return (1);
 	i = -1;
-	while (++i < timer.size)
+	while (++i < t.size)
 	{
-		pthread_mutex_lock(&mutex);
-		timer.id = i + 1;
-		pthread_create(&thread_id[i], NULL, start_process, &timer);
+		pthread_mutex_init(&t.lock[i], NULL);
+		pthread_mutex_lock(t.mutex);
+		t.id = i + 1;
+		pthread_create(&thread_id[i], NULL, ft_start_process, &t);
 	}
 	i = -1;
-	while (++i < timer.size)
+	while (++i < t.size)
 		pthread_join(thread_id[i], NULL);
 	i = -1;
-	pthread_mutex_destroy(timer.mutex);
+	pthread_mutex_destroy(t.mutex);
 	free(thread_id);
 	return (false);
 }

@@ -6,15 +6,16 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/09 23:44:04 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/10/16 20:07:40 by lugonzal         ###   ########.fr       */
+/*   Updated: 2021/12/12 22:37:28 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../inc/philo.h"
+#include "philo.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-long	timestamp(struct timeval ref)
+long	ft_timestamp(struct timeval ref)
 {
 	struct timeval	stamp;
 	time_t			sec;
@@ -26,7 +27,7 @@ long	timestamp(struct timeval ref)
 	return (sec + micro_s);
 }
 
-static bool	max_status(t_timer timer)
+static bool	ft_max_status(t_timer timer)
 {
 	size_t	i;
 
@@ -43,24 +44,18 @@ static bool	max_status(t_timer timer)
 	return (false);
 }
 
-void	dead_status(struct timeval start, t_timer *timer)
+void	ft_dead_status(struct timeval start, t_timer *timer)
 {
-	struct timeval	end;
-	time_t			sec;
-	suseconds_t		micro_s;
-	long			total;
-
-	gettimeofday(&end, NULL);
-	sec = end.tv_sec - start.tv_sec;
-	micro_s = end.tv_usec - start.tv_usec;
-	total = (long)sec * 1000 + (long)micro_s / 1000;
-	if ((total >= (long)timer->die || max_status(*timer)) && *timer->status)
+	usleep(1000);
+	if ((ft_timestamp(start) >= (long)timer->die
+			|| ft_max_status(*timer)) && *timer->status)
 	{
 		pthread_mutex_lock(timer->mutex);
 		if (timer->max[timer->id - 1])
-			printf("%ld %zu died\n", timestamp(timer->ref), timer->id);
+			printf("%ld %zu died\n", ft_timestamp(timer->ref), timer->id);
 		*timer->status = false;
 		memset(timer->fork, false, timer->size);
 		pthread_mutex_unlock(timer->mutex);
+		exit(0);
 	}
 }
