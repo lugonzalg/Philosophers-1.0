@@ -6,7 +6,7 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/05 20:09:16 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/12/12 22:35:20 by lugonzal         ###   ########.fr       */
+/*   Updated: 2022/01/16 16:57:40 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ static void	ft_philo_eat(t_timer *t, struct timeval *start)
 	}
 }
 
-static bool	ft_philo_query(t_timer *t, struct timeval *start)
+static int	ft_philo_query(t_timer *t, struct timeval *start)
 {
 	if (ft_fork_request(t, t->id))
 	{
@@ -42,16 +42,16 @@ static bool	ft_philo_query(t_timer *t, struct timeval *start)
 			ft_dead_status(*start, t);
 		ft_philo_eat(t, start);
 		ft_fork_giveback(t, t->id);
-		return (false);
+		return (0);
 	}
-	return (true);
+	return (1);
 }
 
-static bool	ft_sleep(t_timer *t, struct timeval start[2])
+static int	ft_sleep(t_timer *t, struct timeval start[2])
 {
 	ft_dead_status(start[0], t);
 	if (!*t->status)
-		return (true);
+		return (1);
 	pthread_mutex_lock(t->mutex);
 	printf("%ld %zu is sleeping\n", ft_timestamp(t->ref), t->id);
 	pthread_mutex_unlock(t->mutex);
@@ -59,12 +59,12 @@ static bool	ft_sleep(t_timer *t, struct timeval start[2])
 	while ((long)t->sleep > ft_timestamp(start[1]))
 		usleep(t->sleep);
 	if (!*t->status)
-		return (true);
+		return (1);
 	pthread_mutex_lock(t->mutex);
 	printf("%ld %zu is thinking\n", ft_timestamp(t->ref), t->id);
 	pthread_mutex_unlock(t->mutex);
 	ft_dead_status(start[0], t);
-	return (false);
+	return (0);
 }
 
 static void	*ft_start_process(void *t)
@@ -93,7 +93,7 @@ static void	*ft_start_process(void *t)
 	return (NULL);
 }
 
-extern bool	ft_philo_dynamic(t_timer t)
+extern int	ft_philo_dynamic(t_timer t)
 {
 	size_t			i;	
 	pthread_t		*thread_id;
@@ -114,9 +114,12 @@ extern bool	ft_philo_dynamic(t_timer t)
 	}
 	i = -1;
 	while (++i < t.size)
+	{
 		pthread_join(thread_id[i], NULL);
+		pthread_mutex_destroy(&t.lock[i]);
+	}
 	i = -1;
 	pthread_mutex_destroy(t.mutex);
 	free(thread_id);
-	return (false);
+	return (0);
 }

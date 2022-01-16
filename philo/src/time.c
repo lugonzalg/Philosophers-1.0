@@ -6,7 +6,7 @@
 /*   By: lugonzal <lugonzal@student.42urduli>       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/10/09 23:44:04 by lugonzal          #+#    #+#             */
-/*   Updated: 2021/12/12 22:37:28 by lugonzal         ###   ########.fr       */
+/*   Updated: 2022/01/16 16:57:39 by lugonzal         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,16 +46,15 @@ static bool	ft_max_status(t_timer timer)
 
 void	ft_dead_status(struct timeval start, t_timer *timer)
 {
-	usleep(1000);
+	usleep(500);
 	if ((ft_timestamp(start) >= (long)timer->die
 			|| ft_max_status(*timer)) && *timer->status)
 	{
 		pthread_mutex_lock(timer->mutex);
-		if (timer->max[timer->id - 1])
+		if (timer->max[timer->id - 1] && *timer->status)
 			printf("%ld %zu died\n", ft_timestamp(timer->ref), timer->id);
 		*timer->status = false;
 		memset(timer->fork, false, timer->size);
 		pthread_mutex_unlock(timer->mutex);
-		exit(0);
 	}
 }
